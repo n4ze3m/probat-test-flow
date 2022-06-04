@@ -1,0 +1,590 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model alarm_notification {
+  id         Int       @id @default(autoincrement())
+  device_id  String    @db.Text
+  type       String    @default("Alarm") @db.VarChar(255)
+  createdBy  String    @default("plc") @db.VarChar(255)
+  identifier String?   @db.VarChar(255)
+  text       String    @db.VarChar(255)
+  active     Boolean
+  send_push  Boolean?  @default(true)
+  user_id    Int?
+  createdAt  DateTime? @default(now()) @db.DateTime(0)
+  ackAt      DateTime? @db.DateTime(0)
+  users      users?    @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction, map: "alarm_notification_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model bean {
+  id         Int          @id @default(autoincrement())
+  bean_name  String       @db.VarChar(45)
+  dump_beans dump_beans[]
+  recipes    recipes[]
+}
+
+model bin_transfer {
+  id               Int      @id @default(autoincrement())
+  source_device_id String   @db.VarChar(256)
+  target_device    String   @db.VarChar(256)
+  target_amount    Int
+  plc_acknowledged Boolean  @default(false)
+  updatedAt        DateTime @default(now()) @db.Timestamp(0)
+}
+
+model commands_input_lookup {
+  command_input_id    Int     @id @default(autoincrement())
+  command_input_label String  @db.Text
+  command_owner       String? @db.Text
+}
+
+model commands_input_read {
+  id                  Int       @id @default(autoincrement())
+  device_id           String    @db.Text
+  command_input_id    Int
+  command_input_value Int
+  updated_on          DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model commands_input_write {
+  id                  Int       @id @default(autoincrement())
+  device_id           String    @db.Text
+  command_input_id    Int
+  command_input_value Int
+  updated_on          DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model commands_lookup {
+  command_id    Int     @id @default(autoincrement())
+  command_label String  @db.Text
+  command_owner String? @db.Text
+}
+
+model commands_read {
+  id            Int       @id @default(autoincrement())
+  device_id     String    @db.Text
+  command_id    Int
+  command_value Int       @db.TinyInt
+  author        String    @default("app") @db.VarChar(256)
+  updated_on    DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model commands_write {
+  id            Int       @id @default(autoincrement())
+  device_id     String    @db.Text
+  command_id    Int
+  command_value Int       @db.TinyInt
+  updated_on    DateTime? @default(now()) @db.Timestamp(0)
+}
+
+model device_capacity {
+  capacity_id Int     @id @default(autoincrement())
+  device_id   String  @db.VarChar(255)
+  occupancy   Decimal @db.Decimal(15, 0)
+  capacity    Decimal @db.Decimal(15, 0)
+  devices     devices @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_device_capacity_devices1")
+
+  @@index([device_id], map: "fk_device_capacity_devices1_idx")
+}
+
+model device_edge {
+  id           Int         @id @default(autoincrement())
+  sourceHandle String?     @db.VarChar(256)
+  targetHandle String?     @db.VarChar(256)
+  source       String      @db.VarChar(256)
+  target       String      @db.VarChar(256)
+  rule_id      Int
+  device_rule  device_rule @relation(fields: [rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_node_id_r")
+
+  @@index([rule_id], map: "fk_node_id_r_idx")
+}
+
+model device_node {
+  id             Int         @id @default(autoincrement())
+  type           String      @default("default") @db.VarChar(255)
+  device_rule_id Int
+  label          String      @db.VarChar(256)
+  flow_id        String      @db.VarChar(256)
+  x              Float       @db.Float
+  y              Float       @db.Float
+  handleCount    Int?        @default(1)
+  handlePosition Int?        @default(1)
+  targetCount    Int?        @default(1)
+  sourceCount    Int?        @default(1)
+  targetPosition String?     @default("top") @db.VarChar(45)
+  sourcePosition String?     @default("bottom") @db.VarChar(45)
+  size           String?     @default("lg") @db.VarChar(45)
+  device_rule    device_rule @relation(fields: [device_rule_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "fk_dev_rul_id")
+
+  @@index([device_rule_id], map: "fk_rule_id_idx")
+}
+
+model device_occ {
+  id        Int       @id @default(autoincrement())
+  device_id String?   @db.Text
+  value     String?   @db.Text
+  createdAt DateTime? @default(now()) @db.DateTime(0)
+}
+
+model device_oee {
+  oee_id         Int       @id @default(autoincrement())
+  oee_device_id  String    @db.VarChar(255)
+  oee_datetime   DateTime  @db.DateTime(0)
+  total_scrap    Int?      @default(1)
+  total_produced Int?      @default(0)
+  shift_start    DateTime? @db.DateTime(0)
+  shift_end      DateTime? @db.DateTime(0)
+  devices        devices   @relation(fields: [oee_device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_device_oee_devices")
+
+  @@index([oee_device_id], map: "fk_device_oee_devices_idx")
+}
+
+model device_path {
+  id                Int     @id @default(autoincrement())
+  device_id         String  @db.VarChar(255)
+  position          Int
+  start_device_id   String  @db.Text
+  end_device_id     String  @db.Text
+  roaster_device_id String? @db.Text
+  stage             String  @db.Text
+  rule_id           Int
+  devices           devices @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "device_path_ibfk_1")
+
+  @@index([device_id], map: "device_id")
+}
+
+model device_rule {
+  id          Int           @id @default(autoincrement())
+  name        String?       @db.VarChar(45)
+  active      Int?          @default(0) @db.TinyInt
+  device_edge device_edge[]
+  device_node device_node[]
+  orders      orders[]
+}
+
+model devicefeatures {
+  id          Int         @id @default(autoincrement())
+  device_id   String
+  label       String
+  value       String
+  popup       String?     @db.VarChar(45)
+  mode        Int         @default(0)
+  type        String?     @default("none") @db.VarChar(45)
+  flow_device flow_device @relation(fields: [device_id], references: [id])
+
+  @@index([device_id], map: "flow_meta_flow_id_fkey")
+}
+
+model devices {
+  device_id                                               String                @id @db.VarChar(255)
+  device_name                                             String                @db.VarChar(255)
+  device_description                                      String                @db.Text
+  device_type                                             String                @db.VarChar(255)
+  device_stage                                            Int
+  device_unit                                             Int
+  device_status                                           Int?                  @default(4)
+  order                                                   Int?
+  recipe_id                                               Int?
+  max_pound_field                                         Int?
+  current_weight                                          Int?
+  image                                                   String?               @db.VarChar(255)
+  slug                                                    String?               @db.VarChar(500)
+  active                                                  Int?                  @default(1) @db.TinyInt
+  stages                                                  stages                @relation(fields: [device_stage], references: [stage_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_devices_stages_1")
+  deviceunits                                             deviceunits           @relation(fields: [device_unit], references: [unit_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_devices_unit_1")
+  recipes                                                 recipes?              @relation(fields: [recipe_id], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_devices_recipes_1")
+  device_capacity                                         device_capacity[]
+  device_oee                                              device_oee[]
+  device_path                                             device_path[]
+  devicestatushistory                                     devicestatushistory[]
+  dump_beans                                              dump_beans[]
+  events                                                  events[]
+  flow_rule_steps_devicesToflow_rule_steps_from_device_id flow_rule_steps[]     @relation("devicesToflow_rule_steps_from_device_id")
+  flow_rule_steps_devicesToflow_rule_steps_to_device_id   flow_rule_steps[]     @relation("devicesToflow_rule_steps_to_device_id")
+  product_movement                                        product_movement[]
+
+  @@index([recipe_id], map: "fk_devices_recipes_1_idx")
+  @@index([device_stage], map: "fk_devices_stages_1")
+  @@index([device_unit], map: "fk_devices_unit_1")
+}
+
+model devicestatus {
+  status_id           Int                   @id @default(autoincrement())
+  status_name         String                @db.VarChar(255)
+  status_color        String                @db.VarChar(255)
+  devicestatushistory devicestatushistory[]
+}
+
+model devicestatushistory {
+  history_id   BigInt       @id @default(autoincrement())
+  device_id    String       @db.VarChar(255)
+  status_id    Int
+  status_time  DateTime     @db.DateTime(0)
+  devices      devices      @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_devicestatushistory_devices_1")
+  devicestatus devicestatus @relation(fields: [status_id], references: [status_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_devicestatushistory_statustable_1")
+
+  @@index([device_id], map: "fk_devicestatushistory_devices_1")
+  @@index([status_id], map: "fk_devicestatushistory_statustable_1")
+}
+
+model devicetype_command {
+  id             Int     @id @default(autoincrement())
+  device_type_id Int
+  app_commands   String? @db.Text
+  plc_commands   String? @db.Text
+}
+
+model devicetype_command_input {
+  id             Int     @id @default(autoincrement())
+  device_type_id Int
+  app_commands   String? @db.Text
+  plc_commands   String? @db.Text
+}
+
+model deviceunits {
+  unit_id   Int       @id @default(autoincrement())
+  unit_name String    @db.VarChar(250)
+  devices   devices[]
+}
+
+model diagram_other_data {
+  id                   Int                   @id @default(autoincrement())
+  diagram_id           Int?
+  width                Int?                  @default(100)
+  color                String?               @default("#ef7878") @db.VarChar(255)
+  sourcePosition       String?               @default("left") @db.VarChar(255)
+  targetPosition       String?               @default("right") @db.VarChar(255)
+  product_flow_diagram product_flow_diagram? @relation(fields: [diagram_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_flow_id_meta")
+
+  @@index([diagram_id], map: "fk_device_id_idx")
+}
+
+model diagram_position {
+  id                   Int                   @id @default(autoincrement())
+  diagram_id           Int?
+  x                    Int?
+  y                    Int?
+  product_flow_diagram product_flow_diagram? @relation(fields: [diagram_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "product_diagram_fk")
+
+  @@index([diagram_id], map: "product_diagram_fk_idx")
+}
+
+model dump_beans {
+  id                    Int      @id @default(autoincrement())
+  device_id             String?  @db.VarChar(255)
+  order_id              String?  @db.Text
+  lot_number            String?  @db.Text
+  bean                  Int?
+  amount                Int?
+  balance               Int?     @default(0)
+  acknowledged          Boolean  @default(false)
+  showPopup             Boolean  @default(true)
+  createdAt             DateTime @db.Timestamp(0)
+  updatedAt             DateTime @default(now()) @db.Timestamp(0)
+  bean_beanTodump_beans bean?    @relation(fields: [bean], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "dump_beans_ibfk_2")
+  devices               devices? @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "dump_beans_ibfk_1")
+
+  @@index([bean], map: "bean")
+  @@index([device_id], map: "device_id")
+}
+
+model dump_lookup {
+  id         Int      @id @default(autoincrement())
+  bean_id    Int
+  lot_number String   @db.Text
+  order_id   Int
+  amount     Int
+  createdAt  DateTime @default(now()) @db.Timestamp(0)
+}
+
+model events {
+  event_id          Int      @id @default(autoincrement())
+  event_device_id   String   @db.VarChar(255)
+  event_time        DateTime @default(now()) @db.DateTime(0)
+  event_description String   @db.VarChar(255)
+  devices           devices  @relation(fields: [event_device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_events_devices_1")
+
+  @@index([event_device_id], map: "fk_events_devices_1")
+}
+
+model flow_buttons {
+  id          Int         @id @default(autoincrement())
+  flow_id     String
+  title       String
+  onClick     String
+  active_mode Int?        @default(0)
+  flow_device flow_device @relation(fields: [flow_id], references: [id])
+
+  @@index([flow_id], map: "flow_buttons_flow_id_fkey")
+}
+
+model flow_connection {
+  id       Int    @id @default(autoincrement())
+  source   String @db.VarChar(45)
+  target   String @db.VarChar(45)
+  animated Int    @default(1)
+  rule     Int
+}
+
+model flow_device {
+  id             String           @id @unique
+  device         String?          @db.VarChar(45)
+  name           String           @db.VarChar(45)
+  slug           String?          @db.VarChar(45)
+  devicefeatures devicefeatures[]
+  flow_buttons   flow_buttons[]
+}
+
+model flow_rule {
+  id              Int               @id @default(autoincrement())
+  rule_name       String            @db.VarChar(45)
+  flow_rule_steps flow_rule_steps[]
+}
+
+model flow_rule_steps {
+  id                                              Int       @id
+  from_device_id                                  String    @db.VarChar(255)
+  to_device_id                                    String    @db.VarChar(255)
+  flow_id                                         Int
+  flow_rule                                       flow_rule @relation(fields: [flow_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_flow_id")
+  devices_devicesToflow_rule_steps_from_device_id devices   @relation("devicesToflow_rule_steps_from_device_id", fields: [from_device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_from_device_id")
+  devices_devicesToflow_rule_steps_to_device_id   devices   @relation("devicesToflow_rule_steps_to_device_id", fields: [to_device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_to_device_id")
+
+  @@index([flow_id], map: "fk_flow_id_idx")
+  @@index([from_device_id], map: "fk_from_device_id_idx")
+  @@index([to_device_id], map: "fk_to_device_id_idx")
+}
+
+model from_plc {
+  id            Int     @id @default(autoincrement())
+  request_id    Int
+  output_weight Int     @default(0)
+  status        String? @db.Text
+  error_device  String? @db.Text
+  path_id       Int
+  read          Boolean @default(false)
+  path          path    @relation(fields: [path_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "from_plc_ibfk_1")
+
+  @@index([path_id], map: "path_id")
+}
+
+model merged_orders {
+  id        Int     @id @default(autoincrement())
+  order_ids String  @db.Text
+  quantity  Float   @db.Float
+  isActive  Boolean @default(true)
+}
+
+model order_trigger {
+  id        Int    @id @default(autoincrement())
+  order_id  Int
+  device_id String @db.VarChar(255)
+}
+
+model orders {
+  order_id         Int          @id @default(autoincrement())
+  order_customer   String       @db.VarChar(255)
+  order_date       DateTime     @db.DateTime(0)
+  fulfillment_date DateTime     @db.DateTime(0)
+  order_product    Int
+  order_qty        Int?
+  split_qty        Int?
+  total_split      Int?         @default(0)
+  split_amt        Int?
+  status           Int?         @default(0)
+  ord_tig          Int?         @default(0)
+  batch_id         String?      @db.VarChar(45)
+  priority         String?      @default("low") @db.VarChar(45)
+  roast_start_time DateTime?    @db.DateTime(0)
+  roast_start_end  DateTime?    @db.DateTime(0)
+  lot_number       String?      @db.VarChar(45)
+  start_device     String?      @db.VarChar(255)
+  end_device       String?      @db.VarChar(255)
+  roast_device     String?      @db.VarChar(255)
+  bin_device       String?      @db.VarChar(255)
+  tig_device       String?      @db.VarChar(255)
+  start_all        Boolean?     @default(true)
+  merged           Boolean?     @default(false)
+  vorder           Boolean?
+  rule_id          Int?
+  merge_ref        Int?
+  sort_no          Int?         @unique(map: "sort_no")
+  plc_id           Int?
+  product          product      @relation(fields: [order_product], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_orders_product_1")
+  device_rule      device_rule? @relation(fields: [rule_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_device_rule")
+
+  @@index([rule_id], map: "fk_device_rule_idx")
+  @@index([order_product], map: "fk_orders_product_1")
+}
+
+model packing_trigger {
+  id        Int    @id @default(autoincrement())
+  order_id  Int
+  device_id String @db.VarChar(255)
+}
+
+model path {
+  id          Int        @id @default(autoincrement())
+  activity    String     @db.Text
+  main_device String     @db.Text
+  end_device  String     @db.Text
+  rule_id     Int
+  from_plc    from_plc[]
+  to_plc      to_plc[]
+}
+
+model product {
+  product_id          Int                @id @default(autoincrement())
+  product_name        String             @db.VarChar(255)
+  product_type        String             @db.VarChar(255)
+  product_description String?            @db.Text
+  product_recipe      Int
+  product_lot_number  String             @db.VarChar(255)
+  isactive            Int?               @default(0) @db.TinyInt
+  recipes             recipes            @relation(fields: [product_recipe], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipe_1")
+  orders              orders[]
+  product_movement    product_movement[]
+  productsupplier     productsupplier[]
+
+  @@index([product_recipe], map: "fk_recipe_1_idx")
+}
+
+model product_flow_diagram {
+  id                 Int                  @id @default(autoincrement())
+  name               String               @db.VarChar(255)
+  count              Int?                 @default(1)
+  image              String               @db.VarChar(255)
+  diagram_other_data diagram_other_data[]
+  diagram_position   diagram_position[]
+}
+
+model product_movement {
+  product_movement_id BigInt   @id @default(autoincrement())
+  device_id           String   @db.VarChar(255)
+  movement_datetime   DateTime @default(now()) @db.DateTime(0)
+  product_id          Int?
+  reported_value      Int?
+  devices             devices  @relation(fields: [device_id], references: [device_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_movement_devices_1")
+  product             product? @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_product_movement_product_1")
+
+  @@index([device_id], map: "fk_product_movement_devices_1")
+  @@index([product_id], map: "fk_product_movement_product_1_idx")
+}
+
+model production {
+  production_id        Int       @id @default(autoincrement())
+  production_recipe_id Int
+  production_qty       BigInt?
+  production_datetime  DateTime? @db.DateTime(0)
+  production_expected  String?   @default("10000") @db.VarChar(45)
+  recipes              recipes   @relation(fields: [production_recipe_id], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_production_recipes1")
+
+  @@index([production_recipe_id], map: "fk_production_recipes1_idx")
+}
+
+model productsupplier {
+  productsupplier_id Int      @id @default(autoincrement())
+  productid          Int
+  supplier_id        Int
+  product            product  @relation(fields: [productid], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_productsupplier_product_1")
+  supplier           supplier @relation(fields: [supplier_id], references: [supplier_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_productsupplier_supplier_1")
+
+  @@index([productid], map: "fk_productsupplier_product_1")
+  @@index([supplier_id], map: "fk_productsupplier_supplier_1")
+}
+
+model recipes {
+  recipe_id          Int           @id @default(autoincrement())
+  recipe_name        String        @db.VarChar(255)
+  status             Int?          @default(0)
+  bean               Int?
+  bean_beanTorecipes bean?         @relation(fields: [bean], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_bean")
+  devices            devices[]
+  product            product[]
+  production         production[]
+  recipesteps        recipesteps[]
+
+  @@index([bean], map: "fk_bean_idx")
+}
+
+model recipesteps {
+  recipe_stepid        Int     @id @default(autoincrement())
+  recipe_id            Int
+  step_number          Int
+  step_temp            Decimal @db.Decimal(10, 0)
+  step_burner_position Decimal @db.Decimal(10, 0)
+  recipes              recipes @relation(fields: [recipe_id], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipesteps_recipes_1")
+
+  @@index([recipe_id], map: "fk_recipesteps_recipes_1")
+}
+
+model stages {
+  stage_id          Int       @id @default(autoincrement())
+  stage_name        String    @db.VarChar(255)
+  stage_description String    @db.Text
+  stage_enabled     Int       @db.TinyInt
+  devices           devices[]
+}
+
+model supplier {
+  supplier_id     Int               @id @default(autoincrement())
+  suppier_name    String            @db.VarChar(255)
+  supplier_email  String            @db.VarChar(255)
+  supplier_phone  String            @db.VarChar(255)
+  productsupplier productsupplier[]
+}
+
+model to_plc {
+  id           Int    @id @default(autoincrement())
+  start_device String @db.Text
+  weight       Int
+  end_device   String @db.Text
+  path_id      Int
+  cmd          String @db.Text
+  path         path   @relation(fields: [path_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "to_plc_ibfk_1")
+
+  @@index([path_id], map: "path_id")
+}
+
+model user_notification {
+  id       Int  @id @default(autoincrement())
+  user_id  Int
+  alarm_id Int
+  read     Int? @default(0) @db.TinyInt
+}
+
+model userroles {
+  role_id          Int     @id @default(autoincrement())
+  role_name        String  @db.VarChar(255)
+  role_description String? @db.VarChar(255)
+  is_admin         Boolean
+  users            users[]
+}
+
+model users {
+  user_id            Int                  @id @default(autoincrement())
+  full_name          String               @db.VarChar(255)
+  user_password      String               @db.VarChar(255)
+  username           String               @db.VarChar(255)
+  user_role          Int?
+  userroles          userroles?           @relation(fields: [user_role], references: [role_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_users_userroles_1")
+  alarm_notification alarm_notification[]
+
+  @@index([user_role], map: "fk_users_userroles_1")
+}
+
+model workflow_sort {
+  id           Int    @id @default(autoincrement())
+  work_flow_id Int
+  sort_no      Int
+  device_id    String @db.VarChar(255)
+  device_name  String @db.VarChar(255)
+}
