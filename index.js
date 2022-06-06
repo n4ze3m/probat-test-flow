@@ -7,120 +7,6 @@ const sleep = async (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-const devices = [
-    // {
-    //     "device_id": "1008.00",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.22",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.26",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.26",
-    //     "command_id": 6,
-    //     "command_value": 2,
-    //     "type": "input",
-    //     "wait_finish": true,
-    //     "wait_device": ["100.26"]
-    // },
-
-
-
-    // {
-    //     "device_id": "100.18",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.18",
-    //     "command_id": 6,
-    //     "command_value": 1,
-    //     "type": "input",
-    //     "wait_finish": true,
-    //     "wait_device": ["100.18"]
-    // },
-
-    // {
-    //     "device_id": "100.24",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": true,
-    //     "wait_device": ["100.24"]
-    // },
-    // {
-    //     "device_id": "100.25",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": true,
-    //     "wait_device": ["100.25"]
-    // },
-    // {
-    //     "device_id": "100.23",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": true,
-    //     "wait_device": ["100.23"]
-    // },
-    // {
-    //     "device_id": "100.23",
-    //     "command_id": 3,
-    //     "command_value": 0,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-
-
-    // {
-    //     "device_id": "100.24",
-    //     "command_id": 3,
-    //     "command_value": 0,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.25",
-    //     "command_id": 3,
-    //     "command_value": 0,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // },
-    // {
-    //     "device_id": "100.17",
-    //     "command_id": 3,
-    //     "command_value": 1,
-    //     "type": "binary",
-    //     "wait_finish": false,
-    //     "wait_device": []
-    // }
-]
-
-
 const createLogs = async (device_id, message) => {
     await prisma.events.create({
         data: {
@@ -173,9 +59,10 @@ const waitForFinish = async (device) => {
     // create promise to wait for devices to finish
     let isNotFinish = true
     let finished_devices = []
-    let wait_device_count = device.wait_device.length
+    const wait_device = device.wait_device.split(',')
+    let wait_device_count = wait_device.length
     while (isNotFinish) {
-        device.wait_device.forEach(async (device_id) => {
+        wait_device.forEach(async (device_id) => {
             const finished = await prisma.commands_write.findFirst({
                 where: {
                     device_id: device_id,
@@ -207,19 +94,48 @@ const waitForFinish = async (device) => {
 
 const main = async () => {
     console.log("Worker started")
-    try {
-        for (const device of devices) {
-            console.log(`Start device ${device.device_id}`)
-            await setValues(device)
-            if (device.wait_finish) {
-                console.log(`Wait for devices to finish`)
-                await waitForFinish(device)
+    while (true) {
+        try {
+            const pending_works = await prisma.workflow_status.findMany({
+                where: { status: true }
+            })
+            for (const pending of pending_works) {
+                const workflow_id = pending.work_flow_id
+                const devices = await prisma.workflow_logic.findMany({
+                    where: {
+                        workflow_id
+                    },
+                    orderBy: [{
+                        sort_no: 'asc'
+                    }]
+                })
+
+                for (let i = 0; i < devices.length; i++) {
+                    const device = devices[i]
+                    console.log(`Start device ${device.device_id}`)
+                    await setValues(device)
+                    if (device.wait_finish) {
+                        console.log(`Wait for devices to finish`)
+                        await waitForFinish(device)
+                    }
+                    await sleep(2000)
+                    console.log(`Done`, device.device_id)
+                    if (i === devices.length - 1) {
+                        await prisma.workflow_status.update({
+                            where: {
+                                id: pending.id
+                            },
+                            data: {
+                                status: false
+                            }
+                        })
+                    }
+                }
             }
-            await sleep(2000)
-            console.log(`Done`, device.device_id)
+        } catch (e) {
+            console.log(e)
         }
-    } catch (e) {
-        console.log(e)
+        sleep(5000)
     }
 }
 
