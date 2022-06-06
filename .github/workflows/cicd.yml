@@ -1,0 +1,25 @@
+name: Server Cooking (ci/cd)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build and Deploy
+    runs-on: self-hosted
+    steps:
+      - name: Build and deploy probat flow image to docker hub
+        uses: actions/checkout@v2
+      - run: |
+          docker build -t n4z3m/probat-flow-worker:latest .
+          docker push n4z3m/probat-flow-worker:latest
+      - name: Restart docker-compose
+        uses: actions/checkout@v2
+      - run: |
+          cd ~
+          cd backend/
+          docker-compose stop
+          docker-compose rm -f
+          docker-compose pull
+          docker-compose up -d

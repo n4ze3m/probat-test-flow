@@ -588,3 +588,21 @@ model workflow_sort {
   device_id    String @db.VarChar(255)
   device_name  String @db.VarChar(255)
 }
+
+model workflow_logic {
+  id            Int     @id @default(autoincrement())
+  device_id     String  @db.Text
+  command_id    Int
+  command_value Int
+  type          String  @db.Text
+  wait_finish   Boolean @default(false)
+  wait_device   String? @db.Text
+  workflow_id   Int
+  sort_no       Int
+}
+
+model workflow_status {
+  id           Int     @id @default(autoincrement())
+  work_flow_id Int
+  status       Boolean @default(true)
+}

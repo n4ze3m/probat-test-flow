@@ -1,3 +1,4 @@
+require("dotenv/config")
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
@@ -7,116 +8,116 @@ const sleep = async (ms) => {
 }
 
 const devices = [
-    {
-        "device_id": "1008.00",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.22",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.26",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.26",
-        "command_id": 6,
-        "command_value": 2, 
-        "type": "input", 
-        "wait_finish": true,
-        "wait_device": ["100.26"]
-    },
+    // {
+    //     "device_id": "1008.00",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.22",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.26",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.26",
+    //     "command_id": 6,
+    //     "command_value": 2,
+    //     "type": "input",
+    //     "wait_finish": true,
+    //     "wait_device": ["100.26"]
+    // },
 
 
 
-    {
-        "device_id": "100.18",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary", 
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.18",
-        "command_id": 6,
-        "command_value": 1, 
-        "type": "input", 
-        "wait_finish": true,
-        "wait_device": ["100.18"]
-    },
+    // {
+    //     "device_id": "100.18",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.18",
+    //     "command_id": 6,
+    //     "command_value": 1,
+    //     "type": "input",
+    //     "wait_finish": true,
+    //     "wait_device": ["100.18"]
+    // },
 
-    {
-        "device_id": "100.24",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": true,
-        "wait_device": ["100.24"]
-    },
-    {
-        "device_id": "100.25",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": true,
-        "wait_device": ["100.25"]
-    },
-    {
-        "device_id": "100.23",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": true,
-        "wait_device": ["100.23"]
-    },
-    {
-        "device_id": "100.23",
-        "command_id": 3,
-        "command_value": 0,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
+    // {
+    //     "device_id": "100.24",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": true,
+    //     "wait_device": ["100.24"]
+    // },
+    // {
+    //     "device_id": "100.25",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": true,
+    //     "wait_device": ["100.25"]
+    // },
+    // {
+    //     "device_id": "100.23",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": true,
+    //     "wait_device": ["100.23"]
+    // },
+    // {
+    //     "device_id": "100.23",
+    //     "command_id": 3,
+    //     "command_value": 0,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
 
 
-    {
-        "device_id": "100.24",
-        "command_id": 3,
-        "command_value": 0,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.25",
-        "command_id": 3,
-        "command_value": 0,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    },
-    {
-        "device_id": "100.17",
-        "command_id": 3,
-        "command_value": 1,
-        "type": "binary",
-        "wait_finish": false,
-        "wait_device": []
-    }
+    // {
+    //     "device_id": "100.24",
+    //     "command_id": 3,
+    //     "command_value": 0,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.25",
+    //     "command_id": 3,
+    //     "command_value": 0,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // },
+    // {
+    //     "device_id": "100.17",
+    //     "command_id": 3,
+    //     "command_value": 1,
+    //     "type": "binary",
+    //     "wait_finish": false,
+    //     "wait_device": []
+    // }
 ]
 
 
@@ -205,6 +206,7 @@ const waitForFinish = async (device) => {
 }
 
 const main = async () => {
+    console.log("Worker started")
     try {
         for (const device of devices) {
             console.log(`Start device ${device.device_id}`)
