@@ -606,3 +606,13 @@ model workflow_status {
   work_flow_id Int
   status       Boolean @default(true)
 }
+
+model workflow_logs {
+  id              Int      @id @default(autoincrement())
+  device_id       String   @db.Text
+  message         String?  @db.Text
+  waiting         Int      @default(1) @db.TinyInt
+  workflow_status Int
+  status_id       Int
+  createdAt       DateTime @default(now()) @db.DateTime(0)
+}

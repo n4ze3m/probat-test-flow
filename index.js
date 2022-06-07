@@ -113,14 +113,47 @@ const main = async () => {
                 for (let i = 0; i < devices.length; i++) {
                     const device = devices[i]
                     console.log(`Start device ${device.device_id}`)
+
                     await setValues(device)
+                    await prisma.workflow_logs.create({
+                        data: {
+                            device_id: device.device_id,
+                            status_id: pending.id,
+                            workflow_status: pending.id,
+                            message: `Command ${device.command_id} with value ${device.command_value} set to device ${device.device_id}`
+                        }
+                    })
                     if (device.wait_finish) {
-                        console.log(`Wait for devices to finish`)
+                        await prisma.workflow_logs.create({
+                            data: {
+                                device_id: device.device_id,
+                                status_id: pending.id,
+                                workflow_status: pending.id,
+                                message: `App is waiting for device (${device.wait_device}) to finish`
+                            }
+                        })
                         await waitForFinish(device)
+                        await prisma.workflow_logs.create({
+                            data: {
+                                device_id: device.device_id,
+                                status_id: pending.id,
+                                workflow_status: pending.id,
+                                message: `App is finished waiting for device (${device.wait_device}) to finish`
+                            }
+                        })
                     }
                     await sleep(2000)
-                    console.log(`Done`, device.device_id)
                     if (i === devices.length - 1) {
+                        await prisma.workflow_logs.create({
+                            data: {
+                                device_id: device.device_id,
+                                status_id: pending.id,
+                                workflow_status: pending.id,
+                                message: `Everything is finished`
+                            }
+                        })
+
+
                         await prisma.workflow_status.update({
                             where: {
                                 id: pending.id
