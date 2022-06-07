@@ -120,7 +120,7 @@ const main = async () => {
                             device_id: device.device_id,
                             status_id: pending.id,
                             workflow_status: pending.id,
-                            message: `Command ${device.command_id} with value ${device.command_value} set to device ${device.device_id}`
+                            message: `${device.type} command ${device.command_id} = ${device.command_value}`
                         }
                     })
                     if (device.wait_finish) {
@@ -129,7 +129,7 @@ const main = async () => {
                                 device_id: device.device_id,
                                 status_id: pending.id,
                                 workflow_status: pending.id,
-                                message: `App is waiting for device (${device.wait_device}) to finish`
+                                message: `Waiting for device (${device.wait_device}) to finish`
                             }
                         })
                         await waitForFinish(device)
@@ -138,7 +138,7 @@ const main = async () => {
                                 device_id: device.device_id,
                                 status_id: pending.id,
                                 workflow_status: pending.id,
-                                message: `App is finished waiting for device (${device.wait_device}) to finish`
+                                message: `Device (${device.wait_device}) is finished`
                             }
                         })
                     }
