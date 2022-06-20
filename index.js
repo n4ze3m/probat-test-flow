@@ -100,68 +100,81 @@ const main = async () => {
                 where: { status: true }
             })
             for (const pending of pending_works) {
-                const workflow_id = pending.work_flow_id
-                const devices = await prisma.workflow_logic.findMany({
-                    where: {
-                        workflow_id
-                    },
-                    orderBy: [{
-                        sort_no: 'asc'
-                    }]
-                })
-
-                for (let i = 0; i < devices.length; i++) {
-                    const device = devices[i]
-                    console.log(`Start device ${device.device_id}`)
-
-                    await setValues(device)
-                    await prisma.workflow_logs.create({
-                        data: {
-                            device_id: device.device_id,
-                            status_id: pending.id,
-                            workflow_status: pending.id,
-                            message: `${device.type} command ${device.command_id} = ${device.command_value}`
-                        }
-                    })
-                    if (device.wait_finish) {
-                        await prisma.workflow_logs.create({
-                            data: {
-                                device_id: device.device_id,
-                                status_id: pending.id,
-                                workflow_status: pending.id,
-                                message: `Waiting for device (${device.wait_device}) to finish`
-                            }
-                        })
-                        await waitForFinish(device)
-                        await prisma.workflow_logs.create({
-                            data: {
-                                device_id: device.device_id,
-                                status_id: pending.id,
-                                workflow_status: pending.id,
-                                message: `Device (${device.wait_device}) is finished`
-                            }
-                        })
-                    }
-                    await sleep(2000)
-                    if (i === devices.length - 1) {
-                        await prisma.workflow_logs.create({
-                            data: {
-                                device_id: device.device_id,
-                                status_id: pending.id,
-                                workflow_status: pending.id,
-                                message: `Everything is finished`
-                            }
-                        })
-
-
-                        await prisma.workflow_status.update({
+                if (pending.type === "order") {
+                    if(pending.order_id)  {
+                        const order = await prisma.orders.findFirst({
                             where: {
-                                id: pending.id
-                            },
-                            data: {
-                                status: false
+                                order_id: pending.order_id
                             }
                         })
+
+                        if(order) {
+                            
+                        }
+                    }
+                } else {
+                    const workflow_id = pending.work_flow_id
+                    const devices = await prisma.workflow_logic.findMany({
+                        where: {
+                            workflow_id
+                        },
+                        orderBy: [{
+                            sort_no: 'asc'
+                        }]
+                    })
+
+                    for (let i = 0; i < devices.length; i++) {
+                        const device = devices[i]
+                        console.log(`Start device ${device.device_id}`)
+                        if (device.wait_finish) {
+                            await prisma.workflow_logs.create({
+                                data: {
+                                    device_id: device.device_id,
+                                    status_id: pending.id,
+                                    workflow_status: pending.id,
+                                    message: `Waiting for device (${device.wait_device}) to finish`
+                                }
+                            })
+                            await waitForFinish(device)
+                            await prisma.workflow_logs.create({
+                                data: {
+                                    device_id: device.device_id,
+                                    status_id: pending.id,
+                                    workflow_status: pending.id,
+                                    message: `Device (${device.wait_device}) is finished`
+                                }
+                            })
+                            await setValues(device)
+                        }
+                        await prisma.workflow_logs.create({
+                            data: {
+                                device_id: device.device_id,
+                                status_id: pending.id,
+                                workflow_status: pending.id,
+                                message: `${device.type} command ${device.command_id} = ${device.command_value}`
+                            }
+                        })
+                        await sleep(2000)
+                        if (i === devices.length - 1) {
+                            await prisma.workflow_logs.create({
+                                data: {
+                                    device_id: device.device_id,
+                                    status_id: pending.id,
+                                    workflow_status: pending.id,
+                                    message: `Everything is finished`
+                                }
+                            })
+
+
+                            await prisma.workflow_status.update({
+                                where: {
+                                    id: pending.id
+                                },
+                                data: {
+                                    status: false
+                                }
+                            })
+                        }
                     }
                 }
             }

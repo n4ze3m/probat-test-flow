@@ -605,6 +605,8 @@ model workflow_status {
   id           Int     @id @default(autoincrement())
   work_flow_id Int
   status       Boolean @default(true)
+  type         String  @default("test") @db.VarChar(256)
+  order_id     Int?
 }
 
 model workflow_logs {
@@ -615,4 +617,14 @@ model workflow_logs {
   workflow_status Int
   status_id       Int
   createdAt       DateTime @default(now()) @db.DateTime(0)
+}
+
+model probat_updates {
+  id             Int      @id @default(autoincrement())
+  version        String   @db.Text
+  sql            String   @db.Text
+  request_update Boolean  @default(false)
+  updated        Boolean  @default(false)
+  change_logs    String   @db.Text
+  createdAt      DateTime @default(now()) @db.DateTime(0)
 }
