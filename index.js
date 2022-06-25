@@ -101,15 +101,43 @@ const main = async () => {
             })
             for (const pending of pending_works) {
                 if (pending.type === "order") {
-                    if(pending.order_id)  {
+                    if (pending.order_id) {
                         const order = await prisma.orders.findFirst({
                             where: {
                                 order_id: pending.order_id
                             }
                         })
 
-                        if(order) {
-                            
+                        if (order) {
+                            const workflow_id = pending.work_flow_id
+                            const devices = await prisma.workflow_logic.findMany({
+                                where: {
+                                    workflow_id
+                                },
+                                orderBy: [{
+                                    sort_no: 'asc'
+                                }]
+                            })
+
+                            let split_qty = order.split_qty
+                            let initialStart = true
+                            while (split_qty > 0) {
+                                for (let i = 0; i < devices.length; i++) {
+                                    let device = devices[i]
+                                    if (initialStart) {
+                                        if (device.command_id === 11) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: order.split_amt
+                                            })
+
+                                        } else {
+                                            await setValues(device)
+                                        }
+                                    }
+                                }
+                                initialStart = false
+                            }
                         }
                     }
                 } else {
