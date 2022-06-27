@@ -92,6 +92,39 @@ const waitForFinish = async (device) => {
     return true
 }
 
+const waitForRoasting = async (device) => {
+
+    const device_id = device.device_id
+    const is_roaster = await prisma.devices.findFirst({
+        where: {
+            device_id,
+            device_type: "Roaster"
+        }
+    })
+
+    if (is_roaster) {
+        let isNotFinish = true
+
+        while (isNotFinish) {
+            const finished = await prisma.commands_write.findFirst({
+                where: {
+                    device_id: device_id,
+                    command_id: 125,
+                    command_value: 1
+                }
+            })
+            if (finished) {
+                isNotFinish = false
+                await createLogs(device_id, `Roasting finished`)
+            }
+            await sleep(1000)
+        }
+
+    }
+
+    return true
+}
+
 const main = async () => {
     console.log("Worker started")
     while (true) {
@@ -109,6 +142,14 @@ const main = async () => {
                         })
 
                         if (order) {
+                            await prisma.orders.update({
+                                where: {
+                                    order_id: order.order_id
+                                },
+                                data: {
+                                    status: 1
+                                }
+                            })
                             const workflow_id = pending.work_flow_id
                             const devices = await prisma.workflow_logic.findMany({
                                 where: {
@@ -134,10 +175,93 @@ const main = async () => {
                                         } else {
                                             await setValues(device)
                                         }
+                                        if (device.wait_finish) {
+                                            await waitForFinish(device)
+                                            await prisma.workflow_logs.create({
+                                                data: {
+                                                    device_id: device.device_id,
+                                                    status_id: pending.id,
+                                                    workflow_status: pending.id,
+                                                    message: `Waiting for device (${device.wait_device}) to finish`
+                                                }
+                                            })
+                                        }
+                                        await prisma.workflow_logs.create({
+                                            data: {
+                                                device_id: device.device_id,
+                                                status_id: pending.id,
+                                                workflow_status: pending.id,
+                                                message: `${device.type} command ${device.command_id} = ${device.command_value}`
+                                            }
+                                        })
+                                        waitForRoasting(device)
+
+                                    } else {
+                                        // after initial loop
+                                        if (device.command_id === 11) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: order.split_amt
+                                            })
+
+                                        } else {
+                                            await setValues(device)
+                                        }
+                                        if (device.wait_finish) {
+                                            await waitForFinish(device)
+                                            await prisma.workflow_logs.create({
+                                                data: {
+                                                    device_id: device.device_id,
+                                                    status_id: pending.id,
+                                                    workflow_status: pending.id,
+                                                    message: `Device (${device.wait_device}) is finished`
+                                                }
+                                            })
+                                        }
+                                        await prisma.workflow_logs.create({
+                                            data: {
+                                                device_id: device.device_id,
+                                                status_id: pending.id,
+                                                workflow_status: pending.id,
+                                                message: `${device.type} command ${device.command_id} = ${device.command_value}`
+                                            }
+                                        })
+                                        waitForRoasting(device)
                                     }
                                 }
                                 initialStart = false
+                                split_qty = split_qty - order.split_amt
+                                await prisma.orders.update({
+                                    where: {
+                                        order_id: order.order_id
+                                    },
+                                    data: {
+                                        split_qty: split_qty
+                                    }
+                                })
                             }
+
+
+
+
+                            await prisma.workflow_status.update({
+                                where: {
+                                    id: pending.id
+                                },
+                                data: {
+                                    status: false
+                                }
+                            })
+
+                            await prisma.orders.update({
+                                where: {
+                                    order_id: order.order_id
+                                },
+                                data: {
+                                    status: 4
+                                }
+                            })
+
                         }
                     }
                 } else {
@@ -154,7 +278,9 @@ const main = async () => {
                     for (let i = 0; i < devices.length; i++) {
                         const device = devices[i]
                         console.log(`Start device ${device.device_id}`)
+                        await setValues(device)
                         if (device.wait_finish) {
+                            await waitForFinish(device)
                             await prisma.workflow_logs.create({
                                 data: {
                                     device_id: device.device_id,
@@ -163,16 +289,6 @@ const main = async () => {
                                     message: `Waiting for device (${device.wait_device}) to finish`
                                 }
                             })
-                            await waitForFinish(device)
-                            await prisma.workflow_logs.create({
-                                data: {
-                                    device_id: device.device_id,
-                                    status_id: pending.id,
-                                    workflow_status: pending.id,
-                                    message: `Device (${device.wait_device}) is finished`
-                                }
-                            })
-                            await setValues(device)
                         }
                         await prisma.workflow_logs.create({
                             data: {
