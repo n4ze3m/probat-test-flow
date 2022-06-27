@@ -166,7 +166,7 @@ const main = async () => {
                                 for (let i = 0; i < devices.length; i++) {
                                     let device = devices[i]
                                     if (initialStart) {
-                                        if (device.command_id === 11) {
+                                        if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
                                             await setValues({
                                                 ...device,
                                                 command_value: order.split_amt
@@ -198,7 +198,7 @@ const main = async () => {
 
                                     } else {
                                         // after initial loop
-                                        if (device.command_id === 11) {
+                                        if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
                                             await setValues({
                                                 ...device,
                                                 command_value: order.split_amt
