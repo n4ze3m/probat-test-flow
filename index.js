@@ -161,6 +161,7 @@ const main = async () => {
                             })
 
                             let split_qty = order.split_qty
+                            console.log(split_qty)
                             let initialStart = true
                             while (split_qty > 0) {
                                 for (let i = 0; i < devices.length; i++) {
@@ -239,6 +240,7 @@ const main = async () => {
                                         split_qty: split_qty
                                     }
                                 })
+                                console.log(split_qty)
                             }
 
 
@@ -258,7 +260,7 @@ const main = async () => {
                                     order_id: order.order_id
                                 },
                                 data: {
-                                    status: 4
+                                    status: 6
                                 }
                             })
 
