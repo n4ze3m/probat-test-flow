@@ -260,7 +260,7 @@ const main = async () => {
                                     order_id: order.order_id
                                 },
                                 data: {
-                                    status: 6
+                                    status: 3
                                 }
                             })
 
