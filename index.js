@@ -279,7 +279,8 @@ const main = async () => {
                                         order_id: order.order_id
                                     },
                                     data: {
-                                        split_qty: split_qty
+                                        split_qty: split_qty,
+                                        split_amt: split_amount
                                     }
                                 })
                                 console.log(split_qty)
