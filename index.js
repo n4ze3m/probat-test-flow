@@ -139,7 +139,7 @@ const waitForRoasting = async (device) => {
 
     }
 
-    return 0
+    return null
 }
 
 const main = async () => {
@@ -181,12 +181,13 @@ const main = async () => {
                             let finish_wight = 0
                             console.log(split_qty)
                             let initialStart = true
+                            let split_amount = 0
                             while (split_qty > 0) {
                                 for (let i = 0; i < devices.length; i++) {
                                     let device = devices[i]
                                     if (initialStart) {
                                         if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
-                                            let split_amount = order.split_amt
+                                            split_amount = order.split_amt
 
                                             if (split_amount > split_qty) {
                                                 split_amount = split_qty + 10
@@ -219,16 +220,23 @@ const main = async () => {
                                                 message: `${device.type} command ${device.command_id} = ${device.command_value}`
                                             }
                                         })
-                                        waitForRoasting(device)
-
+                                        let roaster_finish_weight = await waitForRoasting(device)
+                                        if (roaster_finish_weight) {
+                                            finish_wight = roaster_finish_weight
+                                        }
                                     } else {
                                         // after initial loop
                                         if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
+                                            split_amount = order.split_amt
+
+                                            if (split_amount > split_qty) {
+                                                split_amount = split_qty + 10
+                                            }
+
                                             await setValues({
                                                 ...device,
-                                                command_value: order.split_amt
+                                                command_value: split_amount
                                             })
-
                                         } else {
                                             await setValues(device)
                                         }
@@ -251,11 +259,20 @@ const main = async () => {
                                                 message: `${device.type} command ${device.command_id} = ${device.command_value}`
                                             }
                                         })
-                                        finish_wight = waitForRoasting(device)
+                                        let roaster_finish_weight = await waitForRoasting(device)
+                                        if (roaster_finish_weight) {
+                                            finish_wight = roaster_finish_weight
+                                        }
                                     }
                                 }
                                 initialStart = false
-                                split_qty = split_qty - (order.split_amt - finish_wight)
+                                // this wil first substract the split_amount from the split_qty
+                                split_qty = split_qty - (split_amount)
+                                console.log(split_qty, `${split_qty} - ${split_amount}`)
+                                // then add the finish_wight to the split_qty
+                                split_qty = split_qty + (split_amount - finish_wight)
+                                console.log(split_qty, split_amount, finish_wight, `${split_qty} + ${split_amount - finish_wight}`)
+
 
                                 await prisma.orders.update({
                                     where: {
@@ -266,25 +283,27 @@ const main = async () => {
                                     }
                                 })
                                 console.log(split_qty)
+                                if (split_qty <= 0) {
+                                    await prisma.workflow_status.update({
+                                        where: {
+                                            id: pending.id
+                                        },
+                                        data: {
+                                            status: false
+                                        }
+                                    })
+
+                                    await prisma.orders.update({
+                                        where: {
+                                            order_id: order.order_id
+                                        },
+                                        data: {
+                                            status: 3
+                                        }
+                                    })
+                                    console.log("everything is done")
+                                }
                             }
-
-                            await prisma.workflow_status.update({
-                                where: {
-                                    id: pending.id
-                                },
-                                data: {
-                                    status: false
-                                }
-                            })
-
-                            await prisma.orders.update({
-                                where: {
-                                    order_id: order.order_id
-                                },
-                                data: {
-                                    status: 3
-                                }
-                            })
 
                         }
                     }
