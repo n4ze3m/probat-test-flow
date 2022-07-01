@@ -120,9 +120,24 @@ const waitForRoasting = async (device) => {
             await sleep(1000)
         }
 
+        const finishWeight = await prisma.commands_input_write.findFirst({
+            where: {
+                device_id: device_id,
+                command_input_id: 19
+            }
+        })
+
+        console.log(finishWeight)
+
+        if (finishWeight) {
+            return finishWeight.command_input_value
+        } else {
+            return 0
+        }
+
     }
 
-    return true
+    return 0
 }
 
 const main = async () => {
@@ -161,6 +176,7 @@ const main = async () => {
                             })
 
                             let split_qty = order.split_qty
+                            let finish_wight = 0
                             console.log(split_qty)
                             let initialStart = true
                             while (split_qty > 0) {
@@ -168,9 +184,15 @@ const main = async () => {
                                     let device = devices[i]
                                     if (initialStart) {
                                         if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
+                                            let split_amount = order.split_amt
+
+                                            if (split_amount > split_qty) {
+                                                split_amount = split_qty + 10
+                                            }
+
                                             await setValues({
                                                 ...device,
-                                                command_value: order.split_amt
+                                                command_value: split_amount
                                             })
 
                                         } else {
@@ -227,11 +249,12 @@ const main = async () => {
                                                 message: `${device.type} command ${device.command_id} = ${device.command_value}`
                                             }
                                         })
-                                        waitForRoasting(device)
+                                        finish_wight = waitForRoasting(device)
                                     }
                                 }
                                 initialStart = false
-                                split_qty = split_qty - order.split_amt
+                                split_qty = split_qty - (order.split_amt - finish_wight)
+
                                 await prisma.orders.update({
                                     where: {
                                         order_id: order.order_id
@@ -242,9 +265,6 @@ const main = async () => {
                                 })
                                 console.log(split_qty)
                             }
-
-
-
 
                             await prisma.workflow_status.update({
                                 where: {
