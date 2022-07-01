@@ -120,6 +120,8 @@ const waitForRoasting = async (device) => {
             await sleep(1000)
         }
 
+        await sleep(5000)
+
         const finishWeight = await prisma.commands_input_write.findFirst({
             where: {
                 device_id: device_id,
