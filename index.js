@@ -2,7 +2,6 @@ require("dotenv/config")
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
-
 const sleep = async (ms) => {
     return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -182,7 +181,9 @@ const main = async () => {
                             console.log(split_qty)
                             let initialStart = true
                             let split_amount = 0
+                            let counter = 0;
                             while (split_qty > 0) {
+                                counter++
                                 for (let i = 0; i < devices.length; i++) {
                                     let device = devices[i]
                                     if (initialStart) {
@@ -198,6 +199,23 @@ const main = async () => {
                                                 command_value: split_amount
                                             })
 
+                                        } else if (device.type === "input" && device.command_id === 24) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: split_amount
+                                            })
+
+                                        } else if (device.type === "input" && device.command_id === 23) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: counter + 1
+                                            })
+
+                                        } else if (device.type === "input" && device.command_id === 22) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: order.order_product
+                                            })
                                         } else {
                                             await setValues(device)
                                         }
@@ -220,12 +238,13 @@ const main = async () => {
                                                 message: `${device.type} command ${device.command_id} = ${device.command_value}`
                                             }
                                         })
-                                        let roaster_finish_weight = await waitForRoasting(device)
-                                        if (roaster_finish_weight) {
-                                            finish_wight = roaster_finish_weight
+                                        if (device.type === "binary" && device.command_id === 3 && device.command_value === 1) {
+                                            let roaster_finish_weight = await waitForRoasting(device)
+                                            if (roaster_finish_weight) {
+                                                finish_wight = roaster_finish_weight
+                                            }
                                         }
                                     } else {
-                                        // after initial loop
                                         if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
                                             split_amount = order.split_amt
 
@@ -236,6 +255,24 @@ const main = async () => {
                                             await setValues({
                                                 ...device,
                                                 command_value: split_amount
+                                            })
+
+                                        } else if (device.type === "input" && device.command_id === 24) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: split_amount
+                                            })
+
+                                        } else if (device.type === "input" && device.command_id === 23) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: counter + 1
+                                            })
+
+                                        } else if (device.type === "input" && device.command_id === 22) {
+                                            await setValues({
+                                                ...device,
+                                                command_value: order.order_product
                                             })
                                         } else {
                                             await setValues(device)
@@ -259,9 +296,11 @@ const main = async () => {
                                                 message: `${device.type} command ${device.command_id} = ${device.command_value}`
                                             }
                                         })
-                                        let roaster_finish_weight = await waitForRoasting(device)
-                                        if (roaster_finish_weight) {
-                                            finish_wight = roaster_finish_weight
+                                        if (device.type === "binary" && device.command_id === 3 && device.command_value === 1) {
+                                            let roaster_finish_weight = await waitForRoasting(device)
+                                            if (roaster_finish_weight) {
+                                                finish_wight = roaster_finish_weight
+                                            }
                                         }
                                     }
                                 }
@@ -285,6 +324,7 @@ const main = async () => {
                                 })
                                 console.log(split_qty)
                                 if (split_qty <= 0) {
+                                    counter = 0;
                                     await prisma.workflow_status.update({
                                         where: {
                                             id: pending.id
