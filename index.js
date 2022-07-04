@@ -181,7 +181,7 @@ const main = async () => {
                             console.log(split_qty)
                             let initialStart = true
                             let split_amount = 0
-                            let counter = 0;
+                            let counter = 1;
                             while (split_qty > 0) {
                                 counter++
                                 for (let i = 0; i < devices.length; i++) {
@@ -208,7 +208,7 @@ const main = async () => {
                                         } else if (device.type === "input" && device.command_id === 23) {
                                             await setValues({
                                                 ...device,
-                                                command_value: counter + 1
+                                                command_value: counter
                                             })
 
                                         } else if (device.type === "input" && device.command_id === 22) {
@@ -266,7 +266,7 @@ const main = async () => {
                                         } else if (device.type === "input" && device.command_id === 23) {
                                             await setValues({
                                                 ...device,
-                                                command_value: counter + 1
+                                                command_value: counter
                                             })
 
                                         } else if (device.type === "input" && device.command_id === 22) {
