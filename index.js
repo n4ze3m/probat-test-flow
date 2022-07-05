@@ -324,7 +324,7 @@ const main = async () => {
                                 })
                                 console.log(split_qty)
                                 if (split_qty <= 0) {
-                                    counter = 0;
+                                    counter = 1;
                                     await prisma.workflow_status.update({
                                         where: {
                                             id: pending.id
@@ -346,6 +346,104 @@ const main = async () => {
                                 }
                             }
 
+                        }
+                    }
+                } else if (pending.type === "pack") {
+                    if (pending.order_id) {
+                        const order = await prisma.orders.findFirst({
+                            where: {
+                                order_id: pending.order_id
+                            }
+                        })
+
+                        if (order) {
+                            await prisma.orders.update({
+                                where: {
+                                    order_id: order.order_id
+                                },
+                                data: {
+                                    status: 4
+                                }
+                            })
+                            const workflow_id = pending.work_flow_id
+                            const devices = await prisma.workflow_logic.findMany({
+                                where: {
+                                    workflow_id
+                                },
+                                orderBy: [{
+                                    sort_no: 'asc'
+                                }]
+                            })
+                            for (let i = 0; i < devices.length; i++) {
+                                let device = devices[i]
+
+                                if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
+                                    await setValues({
+                                        ...device,
+                                        command_value: order.order_qty
+                                    })
+
+                                    // } else if (device.type === "input" && device.command_id === 24) {
+                                    //     await setValues({
+                                    //         ...device,
+                                    //         command_value: split_amount
+                                    //     })
+
+                                    // } else if (device.type === "input" && device.command_id === 23) {
+                                    //     await setValues({
+                                    //         ...device,
+                                    //         command_value: counter
+                                    //     })
+
+                                    // } else if (device.type === "input" && device.command_id === 22) {
+                                    //     await setValues({
+                                    //         ...device,
+                                    //         command_value: order.order_product
+                                    //     })
+                                } else {
+                                    await setValues(device)
+                                }
+                                if (device.wait_finish) {
+                                    await waitForFinish(device)
+                                    await prisma.workflow_logs.create({
+                                        data: {
+                                            device_id: device.device_id,
+                                            status_id: pending.id,
+                                            workflow_status: pending.id,
+                                            message: `Device (${device.wait_device}) is finished`
+                                        }
+                                    })
+                                }
+                                await prisma.workflow_logs.create({
+                                    data: {
+                                        device_id: device.device_id,
+                                        status_id: pending.id,
+                                        workflow_status: pending.id,
+                                        message: `${device.type} command ${device.command_id} = ${device.command_value}`
+                                    }
+                                })
+                                // sleep for 5 seconds
+                                await sleep(5000)
+                            }
+                            await prisma.orders.update({
+                                where: {
+                                    order_id: order.order_id
+                                },
+                                data: {
+                                    status: 2
+                                }
+                            })
+                            await prisma.workflow_status.update({
+                                where: {
+                                    id: pending.id
+                                },
+                                data: {
+                                    status: false
+                                }
+                            })
+
+                            
+                            console.log("everything is done")
                         }
                     }
                 } else {
