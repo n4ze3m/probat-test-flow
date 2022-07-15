@@ -442,7 +442,7 @@ const main = async () => {
                                 }
                             })
 
-                            
+
                             console.log("everything is done")
                         }
                     }
@@ -507,7 +507,7 @@ const main = async () => {
         } catch (e) {
             console.log(e)
         }
-        sleep(60000)
+        await sleep(60000)
     }
 }
 
