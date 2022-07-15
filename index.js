@@ -507,7 +507,7 @@ const main = async () => {
         } catch (e) {
             console.log(e)
         }
-        sleep(5000)
+        sleep(60000)
     }
 }
 
