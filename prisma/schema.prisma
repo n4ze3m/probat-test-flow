@@ -25,10 +25,12 @@ model alarm_notification {
 }
 
 model bean {
-  id         Int          @id @default(autoincrement())
-  bean_name  String       @db.VarChar(45)
-  dump_beans dump_beans[]
-  recipes    recipes[]
+  id             Int              @id @default(autoincrement())
+  bean_name      String           @db.VarChar(45)
+  bins           String?          @db.Text
+  dump_beans     dump_beans[]
+  product_recipe product_recipe[]
+  recipes        recipes[]
 }
 
 model bin_transfer {
@@ -163,7 +165,8 @@ model device_path {
 
 model device_rule {
   id          Int           @id @default(autoincrement())
-  name        String?       @db.VarChar(45)
+  name        String?       @db.VarChar(256)
+  type        String?       @default("roasting") @db.VarChar(256)
   active      Int?          @default(0) @db.TinyInt
   device_edge device_edge[]
   device_node device_node[]
@@ -415,6 +418,7 @@ model orders {
   merged           Boolean?     @default(false)
   vorder           Boolean?
   rule_id          Int?
+  roasted_rule_id  Int?
   merge_ref        Int?
   sort_no          Int?         @unique(map: "sort_no")
   plc_id           Int?
@@ -442,17 +446,18 @@ model path {
 }
 
 model product {
-  product_id          Int                @id @default(autoincrement())
-  product_name        String             @db.VarChar(255)
-  product_type        String             @db.VarChar(255)
-  product_description String?            @db.Text
-  product_recipe      Int
-  product_lot_number  String             @db.VarChar(255)
-  isactive            Int?               @default(0) @db.TinyInt
-  recipes             recipes            @relation(fields: [product_recipe], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipe_1")
-  orders              orders[]
-  product_movement    product_movement[]
-  productsupplier     productsupplier[]
+  product_id                             Int                @id @default(autoincrement())
+  product_name                           String?            @db.VarChar(255)
+  product_type                           String?            @db.VarChar(255)
+  product_description                    String?            @db.Text
+  product_recipe                         Int?
+  product_lot_number                     String?            @db.VarChar(255)
+  isactive                               Int?               @default(0) @db.TinyInt
+  recipes                                recipes?           @relation(fields: [product_recipe], references: [recipe_id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recipe_1")
+  orders                                 orders[]
+  product_movement                       product_movement[]
+  product_recipe_productToproduct_recipe product_recipe[]
+  productsupplier                        productsupplier[]
 
   @@index([product_recipe], map: "fk_recipe_1_idx")
 }
@@ -599,6 +604,7 @@ model workflow_logic {
   wait_device   String? @db.Text
   workflow_id   Int
   sort_no       Int
+  dynamic       Boolean @default(false)
 }
 
 model workflow_status {
@@ -627,4 +633,23 @@ model probat_updates {
   updated        Boolean  @default(false)
   change_logs    String   @db.Text
   createdAt      DateTime @default(now()) @db.DateTime(0)
+}
+
+model probat_settings {
+  id         Int    @id @default(autoincrement())
+  related_to String @db.VarChar(256)
+  ref        String @db.VarChar(256)
+  value      String @db.VarChar(256)
+}
+
+model product_recipe {
+  id         Int     @id @default(autoincrement())
+  bean_id    Int
+  product_id Int
+  ratio      Int?    @default(100)
+  bean       bean    @relation(fields: [bean_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "product_recipe_ibfk_1")
+  product    product @relation(fields: [product_id], references: [product_id], onDelete: NoAction, onUpdate: NoAction, map: "product_recipe_ibfk_2")
+
+  @@index([bean_id], map: "bean_id")
+  @@index([product_id], map: "product_id")
 }

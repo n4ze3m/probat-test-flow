@@ -154,6 +154,17 @@ const main = async () => {
                         const order = await prisma.orders.findFirst({
                             where: {
                                 order_id: pending.order_id
+                            },
+                            include: {
+                                product: {
+                                    include: {
+                                        product_recipe_productToproduct_recipe: {
+                                            include: {
+                                                bean: true
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         })
 
@@ -182,22 +193,46 @@ const main = async () => {
                             let initialStart = true
                             let split_amount = 0
                             let counter = 0;
+                            const bean_silos = order.product.product_recipe_productToproduct_recipe.map(bean => {
+                                return {
+                                    device_id: bean.bean.bins.split(',')[0],
+                                    ratio: bean.ratio
+                                }
+                            })
                             while (split_qty > 0) {
                                 counter++
                                 for (let i = 0; i < devices.length; i++) {
                                     let device = devices[i]
                                     if (initialStart) {
+                                        // if(device.device_id === 'vbin' && (device.command_id !== 11 || device.command_id !== 1)) {
+                                        // }
+
+
                                         if (device.type === "input" && (device.command_id === 11 || device.command_id === 1)) {
                                             split_amount = order.split_amt
 
                                             if (split_amount > split_qty) {
-                                                split_amount = split_qty + 10
+                                                split_amount = split_qty
                                             }
 
-                                            await setValues({
-                                                ...device,
-                                                command_value: split_amount
-                                            })
+                                            if (device.device_id === "vbin") {
+                                                console.log(`Set value ${split_amount} to command id ${device.command_id}`)
+                                                for (const bin of bean_silos) {
+                                                    const bin_qty = (bin.ratio / 100) * split_amount
+                                                    console.log(`Set value ${bin_qty} to command id ${device.command_id} ${bin.device_id}`)
+                                                    await setValues({
+                                                        ...device,
+                                                        command_value: parseInt(bin_qty),
+                                                        device_id: bin.device_id
+                                                    })
+                                                }
+                                            } else {
+                                                await setValues({
+                                                    ...device,
+                                                    command_value: split_amount
+                                                })
+                                            }
+
 
                                         } else if (device.type === "input" && device.command_id === 24) {
                                             await setValues({
@@ -217,7 +252,16 @@ const main = async () => {
                                                 command_value: order.order_product
                                             })
                                         } else {
-                                            await setValues(device)
+                                            if(device.device_id === "vbin") {
+                                                for(const bin of bean_silos) {
+                                                    await setValues({
+                                                        ...device,
+                                                        device_id: bin.device_id
+                                                    })
+                                                }
+                                            } else {
+                                                await setValues(device)
+                                            }
                                         }
                                         if (device.wait_finish) {
                                             await waitForFinish(device)
@@ -251,11 +295,24 @@ const main = async () => {
                                             if (split_amount > split_qty) {
                                                 split_amount = split_qty + 10
                                             }
+                                            if (device.device_id === "vbin") {
+                                                console.log(`Set value ${split_amount} to command id ${device.command_id}`)
 
-                                            await setValues({
-                                                ...device,
-                                                command_value: split_amount
-                                            })
+                                                for (const bin of bean_silos) {
+                                                    const bin_qty = (bin.ratio / 100) * split_amount
+                                                    console.log(`Set value ${bin_qty} to command id ${device.command_id} ${bin.device_id}`)
+                                                    await setValues({
+                                                        ...device,
+                                                        command_value: parseInt(bin_qty),
+                                                        device_id: bin.device_id
+                                                    })
+                                                }
+                                            } else {
+                                                await setValues({
+                                                    ...device,
+                                                    command_value: split_amount
+                                                })
+                                            }
 
                                         } else if (device.type === "input" && device.command_id === 24) {
                                             await setValues({
@@ -275,7 +332,16 @@ const main = async () => {
                                                 command_value: order.order_product
                                             })
                                         } else {
-                                            await setValues(device)
+                                            if(device.device_id === "vbin") {
+                                                for(const bin of bean_silos) {
+                                                    await setValues({
+                                                        ...device,
+                                                        device_id: bin.device_id
+                                                    })
+                                                }
+                                            } else {
+                                                await setValues(device)
+                                            }
                                         }
                                         if (device.wait_finish) {
                                             await waitForFinish(device)
