@@ -252,8 +252,8 @@ const main = async () => {
                                                 command_value: order.order_product
                                             })
                                         } else {
-                                            if(device.device_id === "vbin") {
-                                                for(const bin of bean_silos) {
+                                            if (device.device_id === "vbin") {
+                                                for (const bin of bean_silos) {
                                                     await setValues({
                                                         ...device,
                                                         device_id: bin.device_id
@@ -332,8 +332,8 @@ const main = async () => {
                                                 command_value: order.order_product
                                             })
                                         } else {
-                                            if(device.device_id === "vbin") {
-                                                for(const bin of bean_silos) {
+                                            if (device.device_id === "vbin") {
+                                                for (const bin of bean_silos) {
                                                     await setValues({
                                                         ...device,
                                                         device_id: bin.device_id
@@ -405,7 +405,8 @@ const main = async () => {
                                             order_id: order.order_id
                                         },
                                         data: {
-                                            status: 3
+                                            status: 2
+
                                         }
                                     })
                                     console.log("everything is done")
