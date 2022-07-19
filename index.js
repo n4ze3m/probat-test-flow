@@ -400,13 +400,22 @@ const main = async () => {
                                         }
                                     })
 
+
+                                    const isPackingEnabled = await prisma.probat_settings.findFirst({
+                                        where: {
+                                            ref: "r-is-pack",
+                                            value: "yes"
+                                        }
+                                    })
+
+                                    const orderStatus = isPackingEnabled ? 3 : 2
+
                                     await prisma.orders.update({
                                         where: {
                                             order_id: order.order_id
                                         },
                                         data: {
-                                            status: 2
-
+                                            status: orderStatus
                                         }
                                     })
                                     console.log("everything is done")
