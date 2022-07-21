@@ -187,6 +187,15 @@ const main = async () => {
                                 }]
                             })
 
+                            const finishWeightNull = await prisma.probat_settings.findFirst({
+                                where: {
+                                    ref: "r-finish",
+                                    value: "yes"
+                                }
+                            })
+
+                            const isFinishWeightAvailable = finishWeightNull ? true : false
+
                             let split_qty = order.split_qty
                             let finish_wight = 0
                             console.log(split_qty)
@@ -283,9 +292,11 @@ const main = async () => {
                                             }
                                         })
                                         if (device.type === "binary" && device.command_id === 3 && device.command_value === 1) {
-                                            let roaster_finish_weight = await waitForRoasting(device)
-                                            if (roaster_finish_weight) {
-                                                finish_wight = roaster_finish_weight
+                                            if (isFinishWeightAvailable) {
+                                                let roaster_finish_weight = await waitForRoasting(device)
+                                                if (roaster_finish_weight) {
+                                                    finish_wight = roaster_finish_weight
+                                                }
                                             }
                                         }
                                     } else {
@@ -363,14 +374,19 @@ const main = async () => {
                                             }
                                         })
                                         if (device.type === "binary" && device.command_id === 3 && device.command_value === 1) {
-                                            let roaster_finish_weight = await waitForRoasting(device)
-                                            if (roaster_finish_weight) {
-                                                finish_wight = roaster_finish_weight
+                                            if (isFinishWeightAvailable) {
+                                                let roaster_finish_weight = await waitForRoasting(device)
+                                                if (roaster_finish_weight) {
+                                                    finish_wight = roaster_finish_weight
+                                                }
                                             }
                                         }
                                     }
                                 }
                                 initialStart = false
+                                if(!isFinishWeightAvailable){
+                                    finish_wight = parseInt(split_amount)
+                                }
                                 // this wil first substract the split_amount from the split_qty
                                 split_qty = split_qty - (split_amount)
                                 console.log(split_qty, `${split_qty} - ${split_amount}`)
