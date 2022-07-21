@@ -72,16 +72,16 @@ const waitForFinish = async (device) => {
             if (finished) {
                 // check if device is already in array
                 if (finished_devices.length !== wait_device_count) {
-                    if (finished_devices.indexOf(device_id) === -1) {
-                        finished_devices.push(device_id)
+                    if (finished_devices.indexOf(device) === -1) {
+                        finished_devices.push(device)
                     }
                 }
             }
         })
         if (finished_devices.length === wait_device_count) {
             isNotFinish = false
-            finished_devices.forEach(async (device_id) => {
-                await createLogs(device_id, `Device ${device_id} finished`)
+            finished_devices.forEach(async (device) => {
+                await createLogs(device.device_id, `Device ${device.device_id} finished`)
             })
             console.log("Waiting is over")
         }
