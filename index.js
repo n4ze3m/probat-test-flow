@@ -58,15 +58,15 @@ const waitForFinish = async (device) => {
     // create promise to wait for devices to finish
     let isNotFinish = true
     let finished_devices = []
-    const wait_device = device.wait_device.split(',')
+    const wait_device = JSON.parse(device.wait_device)
     let wait_device_count = wait_device.length
     while (isNotFinish) {
-        wait_device.forEach(async (device_id) => {
+        wait_device.forEach(async (device) => {
             const finished = await prisma.commands_write.findFirst({
                 where: {
-                    device_id: device_id,
-                    command_id: 126,
-                    command_value: 1
+                    device_id: device.device_id,
+                    command_id: device.command_id,
+                    command_value: device.command_value
                 }
             })
             if (finished) {
